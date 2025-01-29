@@ -1,4 +1,5 @@
 const crypto = require('crypto');
+require('dotenv').config();
 
 const decryptMessage = (encryptedMessage) => {
   const iv = Buffer.from(encryptedMessage.iv, 'hex');
