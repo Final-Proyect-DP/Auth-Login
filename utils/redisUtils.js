@@ -14,7 +14,12 @@ const redisUtils = {
 
   async getToken(userId) {
     try {
-      const token = await redisClient.get(userId);
+      const token = await new Promise((resolve, reject) => {
+        redisClient.get(userId, (err, reply) => {
+          if (err) reject(err);
+          resolve(reply);
+        });
+      });
       return token;
     } catch (error) {
       logger.error('Error al obtener token de Redis:', error);
@@ -24,8 +29,10 @@ const redisUtils = {
 
   async deleteToken(userId) {
     try {
-      await redisClient.del(userId);
-      logger.info(`Token eliminado para usuario ${userId}`);
+      const result = await redisClient.del(userId);
+      const message = result ? 'Sesión cerrada exitosamente' : 'Sesión no encontrada';
+      logger.info(`${message} para usuario ${userId}`);
+      return { success: true, message };
     } catch (error) {
       logger.error('Error al eliminar token de Redis:', error);
       throw error;
