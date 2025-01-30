@@ -21,7 +21,7 @@ const run = async () => {
           logger.info('Received encrypted message:', encryptedMessage);
 
 
-          const decryptedData = userService.decryptMessage(encryptedMessage);
+          const decryptedData = JSON.parse(userService.decryptMessage(encryptedMessage));
           logger.info('Successfully decrypted message');
 
           const user = new User(decryptedData);
