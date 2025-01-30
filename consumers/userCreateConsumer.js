@@ -16,15 +16,14 @@ const run = async () => {
     await consumer.run({
       eachMessage: async ({ topic, partition, message }) => {
         try {
-          // Recibir el mensaje encriptado exactamente como viene
+
           const encryptedMessage = JSON.parse(message.value.toString());
           logger.info('Received encrypted message:', encryptedMessage);
 
-          // Usar el decryptMessage existente sin modificaciones
+
           const decryptedData = userService.decryptMessage(encryptedMessage);
           logger.info('Successfully decrypted message');
 
-          // Crear el usuario directamente con los datos descifrados
           const user = new User(decryptedData);
           await user.save();
           logger.info(`User created with ID: ${user._id}`);
