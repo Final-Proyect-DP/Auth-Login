@@ -7,6 +7,7 @@ const authRoutes = require('./routes/auth');
 const userCreateConsumer = require('./consumers/userCreateConsumer');
 const userDeleteConsumer = require('./consumers/userDeleteConsumer');
 const userLogoutConsumer = require('./consumers/userLogoutConsumer');
+const userPassReset = require('./consumers/userPassReset');
 const swaggerUi = require('swagger-ui-express');
 const swaggerJsDoc = require('swagger-jsdoc');
 
@@ -41,6 +42,9 @@ connectDB().then(() => {
   });
   userLogoutConsumer.run().catch(err => {
     logger.error('Error starting userLogoutConsumer:', err);
+  });
+  userPassReset.run().catch(err => {
+    logger.error('Error starting userPassReset:', err);
   });
 
 }).catch(err => {

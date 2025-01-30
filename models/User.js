@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
 
 const userSchema = new mongoose.Schema({
   email: {
@@ -13,8 +12,6 @@ const userSchema = new mongoose.Schema({
   }
 });
 
-
-// Eliminar el método matchPassword
 
 const User = mongoose.model('User', userSchema);
 
