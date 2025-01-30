@@ -7,10 +7,10 @@ const verifyToken = async (req, res, next) => {
   const { id } = req.params;
 
   if (!token || !id) {
-    logger.warn('Token o ID faltante en la solicitud');
+    logger.warn('Token or ID missing');
     return res.status(401).json({ 
       success: false, 
-      message: 'Token o ID faltante' 
+      message: 'Token or ID missing' 
     });
   }
 
@@ -19,35 +19,25 @@ const verifyToken = async (req, res, next) => {
     const storedToken = await redis.getToken(id);
 
     if (!storedToken || storedToken !== token) {
-      logger.warn(`Token inválido o expirado para usuario ${id}`);
+      logger.warn(`Invalid or expired token for user ${id}`);
       return res.status(401).json({ 
         success: false, 
-        message: 'Sesión inválida o expirada' 
+        message: 'Invalid or expired session' 
       });
     }
 
-    logger.info(`Token verificado para usuario ${id}`);
+    logger.info(`Token verified for user ${id}`);
     req.userId = id;
     next();
   } catch (err) {
-    logger.error('Error en verificación de token:', err);
+    logger.error('Error verifying token:', err);
     return res.status(401).json({ 
       success: false, 
-      message: 'Token JWT no válido' 
+      message: 'Invalid JWT token' 
     });
   }
 };
 
-// Manejador de errores por si algo falla en el proceso
-const handleAuthError = (err, req, res, next) => {
-  logger.error('Error en autenticación:', err);
-  return res.status(500).json({
-    success: false,
-    message: 'Error en el proceso de autenticación'
-  });
-};
-
 module.exports = {
-  verifyToken,
-  handleAuthError
+  verifyToken
 };

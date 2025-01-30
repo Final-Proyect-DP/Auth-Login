@@ -14,24 +14,24 @@ const router = express.Router();
  *       properties:
  *         email:
  *           type: string
- *           description: El correo electrónico del usuario
+ *           description: The user's email address
  *         password:
  *           type: string
- *           description: La contraseña del usuario
+ *           description: The user's password
  */
 
 /**
  * @swagger
  * tags:
  *   name: Auth
- *   description: API para la gestión de autenticación
+ *   description: API for authentication management
  */
 
 /**
  * @swagger
  * /api/auth/login:
  *   post:
- *     summary: Iniciar sesión de un usuario
+ *     summary: Log in a user
  *     tags: [Auth]
  *     requestBody:
  *       required: true
@@ -41,7 +41,7 @@ const router = express.Router();
  *             $ref: '#/components/schemas/User'
  *     responses:
  *       200:
- *         description: Token JWT y ID del usuario
+ *         description: JWT token and user ID
  *         content:
  *           application/json:
  *             schema:
@@ -49,14 +49,14 @@ const router = express.Router();
  *               properties:
  *                 token:
  *                   type: string
- *                   description: Token JWT para autenticación
+ *                   description: JWT token for authentication
  *                 userId:
  *                   type: string
- *                   description: ID del usuario autenticado
+ *                   description: ID of the authenticated user
  *       400:
- *         description: Correo electrónico o contraseña inválidos
+ *         description: Invalid email or password
  *       500:
- *         description: Error del servidor
+ *         description: Server error
  */
 router.post('/login', loginUser);
 

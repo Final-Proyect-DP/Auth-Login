@@ -1,10 +1,10 @@
-const logger = require('../config/logger'); // Actualizar la ruta
+const logger = require('../config/logger'); // Update the path
 
 const handleErrors = (error, id = '') => {
-  logger.error(`Error en la operación ${id ? `para ID ${id}` : ''}:`, error);
+  logger.error(`Error in operation ${id ? `for ID ${id}` : ''}:`, error);
 
-  // Error de campos requeridos
-  if (error.message.includes('Campos requeridos')) {
+  // Required fields error
+  if (error.message.includes('Required fields')) {
     return {
       status: 400,
       response: {
@@ -14,46 +14,46 @@ const handleErrors = (error, id = '') => {
     };
   }
 
-  // Error de clave duplicada (usuario existente)
+  // Duplicate key error (existing user)
   if (error.code === 11000) {
     return {
       status: 400,
       response: {
         success: false,
-        message: 'El nombre de usuario ya existe'
+        message: 'Username already exists'
       }
     };
   }
 
-  // Error de validación de Mongoose
+  // Mongoose validation error
   if (error.name === 'ValidationError') {
     return {
       status: 400,
       response: {
         success: false,
-        message: 'Error de validación',
+        message: 'Validation error',
         details: error.message
       }
     };
   }
 
-  // Error de usuario no encontrado
+  // User not found error
   if (error.message === 'User not found') {
     return {
       status: 404,
       response: {
         success: false,
-        message: 'Usuario no encontrado'
+        message: 'User not found'
       }
     };
   }
 
-  // Error por defecto (500 Internal Server Error)
+  // Default error (500 Internal Server Error)
   return {
     status: 500,
     response: {
       success: false,
-      message: 'Error interno del servidor'
+      message: 'Internal server error'
     }
   };
 };

@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
-const logger = require('../config/logger'); // Actualizar la ruta
-const redisUtils = require('../utils/redisUtils'); // Actualizar la ruta
+const logger = require('../config/logger'); 
+const redisUtils = require('../utils/redisUtils'); 
 const bcrypt = require('bcryptjs');
 const { sendLoginMessage } = require('../producers/kafkaProducer');
 
@@ -27,16 +27,13 @@ const loginUser = async (req, res) => {
 
     await redisUtils.setToken(user._id.toString(), token);
 
-    // Enviar mensaje a Kafka (ahora con manejo de errores)
     try {
       await sendLoginMessage(user._id.toString(), token);
     } catch (kafkaError) {
       logger.error('Error al enviar mensaje a Kafka:', kafkaError);
-      // Continuamos con la respuesta aunque falle Kafka
     }
 
     logger.info('User logged in successfully');
-    // Devolver token y userId en la respuesta
     res.json({ 
       token,
       userId: user._id.toString()

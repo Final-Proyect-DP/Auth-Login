@@ -1,8 +1,7 @@
-const kafka = require('../config/kafkaConfig'); // Actualizar la ruta
-const mongoose = require('mongoose');
+const kafka = require('../config/kafkaConfig');
+const logger = require('../config/logger');
 const userService = require('../services/userService');
 const User = require('../models/User');
-const logger = require('../config/logger'); // Actualizar la ruta
 require('dotenv').config();
 
 const consumer = kafka.consumer({ groupId: 'login-service-create-group' });
@@ -17,21 +16,29 @@ const run = async () => {
     await consumer.run({
       eachMessage: async ({ topic, partition, message }) => {
         try {
+          // Recibir el mensaje encriptado exactamente como viene
           const encryptedMessage = JSON.parse(message.value.toString());
-          const decryptedMessage = userService.decryptMessage(encryptedMessage);
-          logger.info('Mensaje descifrado:', decryptedMessage);
+          logger.info('Received encrypted message:', encryptedMessage);
 
-          const userData = JSON.parse(decryptedMessage);
-          const user = new User(userData);
+          // Usar el decryptMessage existente sin modificaciones
+          const decryptedData = userService.decryptMessage(encryptedMessage);
+          logger.info('Successfully decrypted message');
+
+          // Crear el usuario directamente con los datos descifrados
+          const user = new User(decryptedData);
           await user.save();
-          logger.info(`Usuario insertado en la base de datos: ${user._id}`);
+          logger.info(`User created with ID: ${user._id}`);
+
         } catch (error) {
-          logger.error('Error al procesar el mensaje de Kafka:', error);
+          logger.error('Error processing message:', {
+            error: error.message,
+            stack: error.stack
+          });
         }
       },
     });
   } catch (error) {
-    logger.error('Create Consumer: Error iniciando el consumidor:', error);
+    logger.error('Create Consumer: Error starting consumer:', error);
     throw error;
   }
 };

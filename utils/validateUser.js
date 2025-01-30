@@ -12,11 +12,11 @@ const validateUpdateFields = (data) => {
   ];
 
   const missingFields = requiredFields.filter(field => !data[field]);
-  
+
   if (missingFields.length > 0) {
-    throw new Error(`Campos requeridos faltantes: ${missingFields.join(', ')}`);
+    throw new Error(`Missing required fields: ${missingFields.join(', ')}`);
   }
-  
+
   return true;
 };
 
