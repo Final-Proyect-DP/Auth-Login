@@ -16,21 +16,21 @@ const run = async () => {
     await consumer.run({
       eachMessage: async ({ topic, partition, message }) => {
         try {
-          console.log(JSON.parse(message.value.toString()));
           const encryptedMessage = JSON.parse(message.value.toString());
-          logger.info('Mensaje cifrado:', encryptedMessage);
+          logger.info('Mensaje cifrado recibido:', encryptedMessage);
+          
           const decryptedMessage = userService.decryptMessage(encryptedMessage);
-          logger.info('Mensaje descifrado:', decryptedMessage);
-
-          // Usar redisUtils.setToken en lugar de storeUserSession
-          await redisUtils.setToken(userId, token);
-          logger.info(`Token almacenado en Redis para usuario ${userId}`);
+          
+          if (!decryptedMessage || !decryptedMessage.userId) {
+            throw new Error('Mensaje descifrado inválido o userId no encontrado');
+          }
+          
+          logger.info(`Procesando cierre de sesión para usuario: ${decryptedMessage.userId}`);
+          await redisUtils.deleteToken(decryptedMessage.userId);
+          logger.info(`Token eliminado exitosamente para usuario: ${decryptedMessage.userId}`);
 
         } catch (error) {
-          logger.error('Error procesando mensaje:', {
-            error: error.message,
-            stack: error.stack
-          });
+          logger.error('Error procesando mensaje de cierre de sesión:', error.message);
         }
       },
     });

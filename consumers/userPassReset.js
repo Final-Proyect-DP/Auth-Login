@@ -16,28 +16,36 @@ const run = async () => {
     await consumer.run({
       eachMessage: async ({ topic, partition, message }) => {
         try {
-          // Parse the incoming Kafka message
           const encryptedPayload = JSON.parse(message.value.toString());
-          console.log('Received encrypted payload:', encryptedPayload);
+          logger.info('Processing password reset request');
 
-          // Decrypt the message using the IV and encryptedData
           const userData = decryptMessage(encryptedPayload);
-          console.log('Decrypted message:', userData);
+          logger.info(`Attempting to update password for user: ${userData.userId}`);
 
-          // Update the user's password in the database using the correct property names
+          // Verificar que tenemos la contraseña hasheada
+          if (!userData.hashedPassword) {
+            throw new Error('No hashedPassword provided in message');
+          }
+
+          // Actualizar usando hashedPassword en lugar de password
           const user = await User.findByIdAndUpdate(
-            userData.userId, // Cambiado de id a userId
-            { $set: { password: userData.password } }, // Cambiado de newPassword a password
+            userData.userId,
+            { 
+              $set: { 
+                password: userData.hashedPassword 
+              } 
+            },
             { new: true }
           );
           
           if (user) {
             logger.info(`Password updated successfully for user: ${user.id}`);
+            logger.info(`New password hash: ${user.password}`);
           } else {
-            logger.warn(`User not found for password update: ${userData.userId}`);
+            logger.error(`User not found for password update: ${userData.userId}`);
           }
         } catch (error) {
-          logger.error('Error processing message:', error);
+          logger.error('Error processing password reset:', error);
           console.log('Error details:', {
             message: error.message,
             stack: error.stack
