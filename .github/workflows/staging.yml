@@ -16,7 +16,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: login .env file
+      - name: edit .env file
         env:
           PORT: ${{ secrets.PORT }}
           MONGODB_URI: ${{ secrets.MONGODB_URI }}
@@ -27,11 +27,12 @@ jobs:
           ENCRYPTION_IV: ${{ secrets.ENCRYPTION_IV }}
           KAFKA_CLIENT_ID: ${{ secrets.KAFKA_CLIENT_ID }}
           KAFKA_BROKER: ${{ secrets.KAFKA_BROKER }}
-          KAFKA_TOPIC: ${{ secrets.KAFKA_TOPIC }}
           KAFKA_TOPIC_USER_CREATE: ${{ secrets.KAFKA_TOPIC_USER_CREATE }}
+          KAFKA_TOPIC_DELETE: ${{ secrets.KAFKA_TOPIC_DELETE }}
           KAFKA_TOPIC_LOGOUT: ${{ secrets.KAFKA_TOPIC_LOGOUT }}
           KAFKA_TOPIC_LOGIN: ${{ secrets.KAFKA_TOPIC_LOGIN }}
-          KAFKA_TOPIC_DELETE: ${{ secrets.KAFKA_TOPIC_DELETE }}
+          KAFKA_TOPIC_PASS_RESET: ${{ secrets.KAFKA_TOPIC_PASS_RESET }}
+          KAFKA_TOPIC_EDIT_USER: ${{ secrets.KAFKA_TOPIC_EDIT_USER }}
         run: |
           echo "PORT=${PORT}" > .env
           echo "MONGODB_URI=${MONGODB_URI}" >> .env
@@ -42,11 +43,12 @@ jobs:
           echo "ENCRYPTION_IV=${ENCRYPTION_IV}" >> .env
           echo "KAFKA_CLIENT_ID=${KAFKA_CLIENT_ID}" >> .env
           echo "KAFKA_BROKER=${KAFKA_BROKER}" >> .env
-          echo "KAFKA_TOPIC=${KAFKA_TOPIC}" >> .env
           echo "KAFKA_TOPIC_USER_CREATE=${KAFKA_TOPIC_USER_CREATE}" >> .env
+          echo "KAFKA_TOPIC_DELETE=${KAFKA_TOPIC_DELETE}" >> .env
           echo "KAFKA_TOPIC_LOGOUT=${KAFKA_TOPIC_LOGOUT}" >> .env
           echo "KAFKA_TOPIC_LOGIN=${KAFKA_TOPIC_LOGIN}" >> .env
-          echo "KAFKA_TOPIC_DELETE=${KAFKA_TOPIC_DELETE}" >> .env
+          echo "KAFKA_TOPIC_PASS_RESET=${KAFKA_TOPIC_PASS_RESET}" >> .env
+          echo "KAFKA_TOPIC_EDIT_USER=${KAFKA_TOPIC_EDIT_USER}" >> .env
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
