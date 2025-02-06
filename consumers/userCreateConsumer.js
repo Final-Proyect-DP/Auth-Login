@@ -4,7 +4,7 @@ const userService = require('../services/userService');
 const User = require('../models/User');
 require('dotenv').config();
 
-const consumer = kafka.consumer({ groupId: 'login-service-create-group' });
+const consumer = kafka.consumer({ groupId: 'Auth-Login-Create-Consumer' });
 
 const run = async () => {
   try {
@@ -16,14 +16,9 @@ const run = async () => {
     await consumer.run({
       eachMessage: async ({ topic, partition, message }) => {
         try {
-
           const encryptedMessage = JSON.parse(message.value.toString());
-          logger.info('Received encrypted message:', encryptedMessage);
-
-
           const decryptedData = JSON.parse(userService.decryptMessage(encryptedMessage));
-          logger.info('Successfully decrypted message');
-
+          
           const user = new User(decryptedData);
           await user.save();
           logger.info(`User created with ID: ${user._id}`);

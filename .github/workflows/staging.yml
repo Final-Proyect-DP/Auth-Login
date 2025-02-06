@@ -2,7 +2,7 @@ name: Deploy Pull Request to main Environment
 
 on:
   push:
-    branches: [main]
+    branches: [staging]
 
 jobs:
   build_docker_image:
@@ -20,8 +20,7 @@ jobs:
         env:
           PORT: ${{ secrets.PORT }}
           MONGODB_URI: ${{ secrets.MONGODB_URI }}
-          REDIS_HOST: ${{ secrets.REDIS_HOST }}
-          REDIS_PORT: ${{ secrets.REDIS_PORT }}
+          REDIS_URL: ${{ secrets.REDIS_URL }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
           ENCRYPTION_IV: ${{ secrets.ENCRYPTION_IV }}
@@ -36,8 +35,7 @@ jobs:
         run: |
           echo "PORT=${PORT}" > .env
           echo "MONGODB_URI=${MONGODB_URI}" >> .env
-          echo "REDIS_HOST=${REDIS_HOST}" >> .env
-          echo "REDIS_PORT=${REDIS_PORT}" >> .env
+          echo "REDIS_URL=${REDIS_URL}" >> .env
           echo "JWT_SECRET=${JWT_SECRET}" >> .env
           echo "ENCRYPTION_KEY=${ENCRYPTION_KEY}" >> .env
           echo "ENCRYPTION_IV=${ENCRYPTION_IV}" >> .env
@@ -83,7 +81,7 @@ jobs:
     strategy:
       matrix:
         ec2_instance: 
-          - ec2-44-202-88-91.compute-1.amazonaws.com
+          - ec2-98-82-38-249.compute-1.amazonaws.com
 
     steps:
       - name: Deploy Container
