@@ -1,0 +1,108 @@
+name: Deploy Pull Request to main Environment
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build_docker_image:
+    name: Build and Push Docker Image
+    runs-on: ubuntu-latest
+
+    outputs:
+      image_tag: ${{ steps.meta.outputs.tags }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: edit .env file
+        env:
+          PORT: ${{ secrets.PORT }}
+          MONGODB_URI: ${{ secrets.MONGODB_URI }}
+          REDIS_HOST: ${{ secrets.REDIS_HOST }}
+          REDIS_PORT: ${{ secrets.REDIS_PORT }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
+          ENCRYPTION_IV: ${{ secrets.ENCRYPTION_IV }}
+          KAFKA_CLIENT_ID: ${{ secrets.KAFKA_CLIENT_ID }}
+          KAFKA_BROKER: ${{ secrets.KAFKA_BROKER }}
+          KAFKA_TOPIC_USER_CREATE: ${{ secrets.KAFKA_TOPIC_USER_CREATE }}
+          KAFKA_TOPIC_DELETE: ${{ secrets.KAFKA_TOPIC_DELETE }}
+          KAFKA_TOPIC_LOGOUT: ${{ secrets.KAFKA_TOPIC_LOGOUT }}
+          KAFKA_TOPIC_LOGIN: ${{ secrets.KAFKA_TOPIC_LOGIN }}
+          KAFKA_TOPIC_PASS_RESET: ${{ secrets.KAFKA_TOPIC_PASS_RESET }}
+          KAFKA_TOPIC_EDIT_USER: ${{ secrets.KAFKA_TOPIC_EDIT_USER }}
+        run: |
+          echo "PORT=${PORT}" > .env
+          echo "MONGODB_URI=${MONGODB_URI}" >> .env
+          echo "REDIS_HOST=${REDIS_HOST}" >> .env
+          echo "REDIS_PORT=${REDIS_PORT}" >> .env
+          echo "JWT_SECRET=${JWT_SECRET}" >> .env
+          echo "ENCRYPTION_KEY=${ENCRYPTION_KEY}" >> .env
+          echo "ENCRYPTION_IV=${ENCRYPTION_IV}" >> .env
+          echo "KAFKA_CLIENT_ID=${KAFKA_CLIENT_ID}" >> .env
+          echo "KAFKA_BROKER=${KAFKA_BROKER}" >> .env
+          echo "KAFKA_TOPIC_USER_CREATE=${KAFKA_TOPIC_USER_CREATE}" >> .env
+          echo "KAFKA_TOPIC_DELETE=${KAFKA_TOPIC_DELETE}" >> .env
+          echo "KAFKA_TOPIC_LOGOUT=${KAFKA_TOPIC_LOGOUT}" >> .env
+          echo "KAFKA_TOPIC_LOGIN=${KAFKA_TOPIC_LOGIN}" >> .env
+          echo "KAFKA_TOPIC_PASS_RESET=${KAFKA_TOPIC_PASS_RESET}" >> .env
+          echo "KAFKA_TOPIC_EDIT_USER=${KAFKA_TOPIC_EDIT_USER}" >> .env
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Docker Hub Login
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Extract metadata for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: byvoxel/auth-login
+          tags: |
+            type=raw,value=staging
+          
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: byvoxel/auth-login:staging
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy_to_ec2:
+    name: Deploy to EC2 Instances
+    runs-on: ubuntu-latest
+    needs: build_docker_image
+    strategy:
+      matrix:
+        ec2_instance: 
+          - ec2-44-202-88-91.compute-1.amazonaws.com
+
+    steps:
+      - name: Deploy Container
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ matrix.ec2_instance }}
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: 22
+          timeout: "120s"
+          script: |
+            set -e
+            echo "Deploying image: byvoxel/auth-login:staging"
+            sudo docker stop auth-login || true
+            sudo docker rm auth-login || true
+            sudo docker pull byvoxel/auth-login:staging
+            sudo docker run -d \
+              --name auth-login \
+              -p 3010:3010 \
+              --restart unless-stopped \
+              byvoxel/auth-login:staging
+            sudo docker system prune -af --volumes || true

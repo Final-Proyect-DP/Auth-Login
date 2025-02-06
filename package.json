@@ -4,7 +4,7 @@
   "description": "API for user login and JWT generation",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node index.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -14,6 +14,7 @@
     "jsonwebtoken": "^9.0.2",
     "kafka-node": "^5.0.0",
     "kafkajs": "^2.2.4",
+    "logger": "^0.0.1",
     "mongoose": "^8.9.4",
     "redis": "^4.0.0",
     "swagger-jsdoc": "^6.1.0",

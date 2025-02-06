@@ -1,27 +1,49 @@
-const { createConsumer } = require('./kafkaConsumer');
-const userService = require('../services/userService');
+const kafka = require('../config/kafkaConfig');
+const { decryptMessage } = require('../services/userService');
 const User = require('../models/User');
+const logger = require('../config/logger');
 require('dotenv').config();
 
-const messageHandler = async (message) => {
+const consumer = kafka.consumer({ groupId: 'login-service-delete-group' });
+
+const run = async () => {
   try {
-    console.log('Mensaje recibido desde Kafka:', message.value.toString());
-    const encryptedMessage = JSON.parse(message.value.toString());
-    console.log('Mensaje encriptado:', encryptedMessage);
-    const decryptedMessage = userService.decryptMessage(encryptedMessage);
-    console.log('Mensaje descifrado:', decryptedMessage);
+    await consumer.connect();
+    logger.info('Delete Consumer: Kafka consumer connected');
+    await consumer.subscribe({ topic: process.env.KAFKA_TOPIC_DELETE, fromBeginning: true });
+    logger.info(`Delete Consumer: Subscribed to topic: ${process.env.KAFKA_TOPIC_DELETE}`);
 
-    const { id } = JSON.parse(decryptedMessage);
-    console.log('ID del usuario a eliminar:', id);
+    await consumer.run({
+      eachMessage: async ({ topic, partition, message }) => {
+        console.log('Received message:', message.value.toString());
+        let encryptedMessage;
+        try {
+          encryptedMessage = JSON.parse(message.value.toString());
+        } catch (error) {
+          console.error('Error parsing message as JSON:', error);
+          return;
+        }
+        console.log('Encrypted message:', encryptedMessage);
+        const decryptedMessage = decryptMessage(encryptedMessage);
+        console.log('Decrypted message:', decryptedMessage);
+        const { id } = JSON.parse(decryptedMessage);
 
-    await User.findByIdAndDelete(id);
-    console.log('Usuario eliminado exitosamente');
+        console.log('User ID to delete:', id);
+
+        const user = await User.findByIdAndDelete(id);
+        if (user) {
+          console.log('User deleted successfully:', user.id);
+        } else {
+          console.log('User not found:', id);
+        }
+      }
+    });
   } catch (error) {
-    console.error('Error al procesar el mensaje de Kafka:', error);
+    logger.error('Delete Consumer: Error in Kafka consumer:', error);
+    throw error;
   }
 };
 
-const consumer = createConsumer('user-delete-group', process.env.KAFKA_TOPIC_USER_DELETE, messageHandler);
-consumer.run().catch(console.error);
+run().catch(console.error);
 
-module.exports = { run: consumer.run };
+module.exports = { run };

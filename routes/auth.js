@@ -14,7 +14,7 @@ const router = express.Router();
  *       properties:
  *         email:
  *           type: string
- *           description: The user's email
+ *           description: The user's email address
  *         password:
  *           type: string
  *           description: The user's password
@@ -24,7 +24,7 @@ const router = express.Router();
  * @swagger
  * tags:
  *   name: Auth
- *   description: The authentication managing API
+ *   description: API for authentication management
  */
 
 /**
@@ -41,7 +41,7 @@ const router = express.Router();
  *             $ref: '#/components/schemas/User'
  *     responses:
  *       200:
- *         description: The JWT token and user id
+ *         description: JWT token and user ID
  *         content:
  *           application/json:
  *             schema:
@@ -49,8 +49,10 @@ const router = express.Router();
  *               properties:
  *                 token:
  *                   type: string
+ *                   description: JWT token for authentication
  *                 userId:
  *                   type: string
+ *                   description: ID of the authenticated user
  *       400:
  *         description: Invalid email or password
  *       500:
