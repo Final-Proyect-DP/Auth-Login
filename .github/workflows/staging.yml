@@ -81,7 +81,7 @@ jobs:
     strategy:
       matrix:
         ec2_instance: 
-          - ec2-107-20-110-6.compute-1.amazonaws.com
+          - ec2-98-82-38-249.compute-1.amazonaws.com
     steps:
       - name: Deploy Container
         uses: appleboy/ssh-action@v1.0.0
