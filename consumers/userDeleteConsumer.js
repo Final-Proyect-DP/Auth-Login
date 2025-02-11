@@ -4,7 +4,7 @@ const User = require('../models/User');
 const logger = require('../config/logger');
 require('dotenv').config();
 
-const consumer = kafka.consumer({ groupId: 'login-service-delete-group' });
+const consumer = kafka.consumer({ groupId: 'Auth-Login-Delete-Consumer' });
 
 const run = async () => {
   try {
@@ -15,26 +15,22 @@ const run = async () => {
 
     await consumer.run({
       eachMessage: async ({ topic, partition, message }) => {
-        console.log('Received message:', message.value.toString());
         let encryptedMessage;
         try {
           encryptedMessage = JSON.parse(message.value.toString());
+          const decryptedMessage = decryptMessage(encryptedMessage);
+          const { id } = JSON.parse(decryptedMessage);
+
+          logger.info(`Attempting to delete user: ${id}`);
+          const user = await User.findByIdAndDelete(id);
+          
+          if (user) {
+            logger.info(`User deleted successfully: ${user.id}`);
+          } else {
+            logger.warn(`User not found for deletion: ${id}`);
+          }
         } catch (error) {
-          console.error('Error parsing message as JSON:', error);
-          return;
-        }
-        console.log('Encrypted message:', encryptedMessage);
-        const decryptedMessage = decryptMessage(encryptedMessage);
-        console.log('Decrypted message:', decryptedMessage);
-        const { id } = JSON.parse(decryptedMessage);
-
-        console.log('User ID to delete:', id);
-
-        const user = await User.findByIdAndDelete(id);
-        if (user) {
-          console.log('User deleted successfully:', user.id);
-        } else {
-          console.log('User not found:', id);
+          logger.error('Error processing delete message:', error);
         }
       }
     });
@@ -43,7 +39,5 @@ const run = async () => {
     throw error;
   }
 };
-
-run().catch(console.error);
 
 module.exports = { run };

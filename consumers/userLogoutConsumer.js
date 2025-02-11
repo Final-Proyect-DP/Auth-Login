@@ -4,33 +4,30 @@ const userService = require('../services/userService');
 const redisUtils = require('../utils/redisUtils');
 require('dotenv').config();
 
-const consumer = kafka.consumer({ groupId: 'login-service-logout-group' });
+const consumer = kafka.consumer({ groupId: 'Auth-Login-Logout-Consumer' });
 
 const run = async () => {
   try {
     await consumer.connect();
-    logger.info('Create Consumer: Kafka consumer connected');
+    logger.info('Logout Consumer: Kafka consumer connected');
     await consumer.subscribe({ topic: process.env.KAFKA_TOPIC_LOGOUT, fromBeginning: true });
-    logger.info(`Create Consumer: Subscribed to topic: ${process.env.KAFKA_TOPIC_LOGOUT}`);
+    logger.info(`Logout Consumer: Subscribed to topic: ${process.env.KAFKA_TOPIC_LOGOUT}`);
 
     await consumer.run({
       eachMessage: async ({ topic, partition, message }) => {
         try {
           const encryptedMessage = JSON.parse(message.value.toString());
-          logger.info('Crypted message:', encryptedMessage);
-          
           const decryptedMessage = userService.decryptMessage(encryptedMessage);
           
           if (!decryptedMessage || !decryptedMessage.userId) {
             throw new Error('invalid uncrypted message or userId not found');
           }
           
-          logger.info(`Procesando cierre de sesión para usuario: ${decryptedMessage.userId}`);
           await redisUtils.deleteToken(decryptedMessage.userId);
-          logger.info(`Token delete: ${decryptedMessage.userId}`);
+          logger.info(`Session closed for user: ${decryptedMessage.userId}`);
 
         } catch (error) {
-          logger.error('Error prosecing message:', error.message);
+          logger.error('Error processing message:', error.message);
         }
       },
     });

@@ -1,13 +1,16 @@
-name: Deploy on staging Environment
+name: Deploy to production Environment
 
 on:
-  push:
-    branches: [staging]
+  pull_request:
+    types: [closed] 
+    branches: [main]
 
 jobs:
   build_docker_image:
+    if: github.event.pull_request.merged == true
     name: Build and Push Docker Image
     runs-on: ubuntu-latest
+
 
     outputs:
       image_tag: ${{ steps.meta.outputs.tags }}
@@ -19,13 +22,12 @@ jobs:
       - name: edit .env file
         env:
           PORT: ${{ secrets.PORT }}
-          MONGODB_URI: ${{ secrets.MONGODB_URI }}
-          REDIS_URL: ${{ secrets.REDIS_URL }}
+          MONGODB_URI: ${{ secrets.MONGODB_URI_PROD }}
+          REDIS_URL: ${{ secrets.REDIS_URL_PROD}}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
           ENCRYPTION_IV: ${{ secrets.ENCRYPTION_IV }}
-          KAFKA_CLIENT_ID: ${{ secrets.KAFKA_CLIENT_ID }}
-          KAFKA_BROKER: ${{ secrets.KAFKA_BROKER }}
+          KAFKA_BROKER: ${{ secrets.KAFKA_BROKER_PROD }}
           KAFKA_TOPIC_USER_CREATE: ${{ secrets.KAFKA_TOPIC_USER_CREATE }}
           KAFKA_TOPIC_DELETE: ${{ secrets.KAFKA_TOPIC_DELETE }}
           KAFKA_TOPIC_LOGOUT: ${{ secrets.KAFKA_TOPIC_LOGOUT }}
@@ -39,7 +41,6 @@ jobs:
           echo "JWT_SECRET=${JWT_SECRET}" >> .env
           echo "ENCRYPTION_KEY=${ENCRYPTION_KEY}" >> .env
           echo "ENCRYPTION_IV=${ENCRYPTION_IV}" >> .env
-          echo "KAFKA_CLIENT_ID=${KAFKA_CLIENT_ID}" >> .env
           echo "KAFKA_BROKER=${KAFKA_BROKER}" >> .env
           echo "KAFKA_TOPIC_USER_CREATE=${KAFKA_TOPIC_USER_CREATE}" >> .env
           echo "KAFKA_TOPIC_DELETE=${KAFKA_TOPIC_DELETE}" >> .env
@@ -63,14 +64,14 @@ jobs:
         with:
           images: byvoxel/auth-login
           tags: |
-            type=raw,value=staging
+            type=raw,value=production
           
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          tags: byvoxel/auth-login:staging
+          tags: byvoxel/auth-login:production
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -80,26 +81,39 @@ jobs:
     needs: build_docker_image
     strategy:
       matrix:
-        ec2_instance: 
-          - ec2-98-82-38-249.compute-1.amazonaws.com
+        include:
+          - instance: ec2-3-226-6-60.compute-1.amazonaws.com
+            type: master
+          - instance: ec2-52-2-45-186.compute-1.amazonaws.com
+            type: worker
+
     steps:
       - name: Deploy Container
         uses: appleboy/ssh-action@v1.0.0
         with:
-          host: ${{ matrix.ec2_instance }}
+          host: ${{ matrix.instance }}
           username: ec2-user
-          key: ${{ secrets.EC2_SSH_KEY1 }}
+          key: ${{ secrets.EC2_SSH_KEY_PROD1 }}
           port: 22
           timeout: "120s"
           script: |
             set -e
-            echo "Deploying image: byvoxel/auth-login:staging"
+            echo "Deploying image: byvoxel/auth-login:production"
             sudo docker stop auth-login || true
             sudo docker rm auth-login || true
-            sudo docker pull byvoxel/auth-login:staging
+            sudo docker pull byvoxel/auth-login:production
+            
+            # Set KAFKA_CLIENT_ID based on instance type
+            if [ "${{ matrix.type }}" = "master" ]; then
+              export KAFKA_CLIENT_ID="${{ secrets.KAFKA_CLIENT_ID_A }}"
+            else
+              export KAFKA_CLIENT_ID="${{ secrets.KAFKA_CLIENT_ID_B }}"
+            fi
+            
             sudo docker run -d \
               --name auth-login \
               -p 3010:3010 \
+              -e KAFKA_CLIENT_ID=${KAFKA_CLIENT_ID} \
               --restart unless-stopped \
-              byvoxel/auth-login:staging
+              byvoxel/auth-login:production
             sudo docker system prune -af --volumes || true
