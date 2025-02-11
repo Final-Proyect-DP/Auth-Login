@@ -19,13 +19,13 @@ jobs:
       - name: edit .env file
         env:
           PORT: ${{ secrets.PORT }}
-          MONGODB_URI: ${{ secrets.MONGODB_URI_PROD }}
-          REDIS_URL: ${{ secrets.REDIS_URL_PROD }}
+          MONGODB_URI: ${{ secrets.MONGODB_URI }}
+          REDIS_URL: ${{ secrets.REDIS_URL }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
           ENCRYPTION_IV: ${{ secrets.ENCRYPTION_IV }}
           KAFKA_CLIENT_ID: ${{ secrets.KAFKA_CLIENT_ID }}
-          KAFKA_BROKER: ${{ secrets.KAFKA_BROKER_PROD }}
+          KAFKA_BROKER: ${{ secrets.KAFKA_BROKER }}
           KAFKA_TOPIC_USER_CREATE: ${{ secrets.KAFKA_TOPIC_USER_CREATE }}
           KAFKA_TOPIC_DELETE: ${{ secrets.KAFKA_TOPIC_DELETE }}
           KAFKA_TOPIC_LOGOUT: ${{ secrets.KAFKA_TOPIC_LOGOUT }}
